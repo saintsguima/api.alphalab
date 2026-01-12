@@ -1,0 +1,21 @@
+# Ativa o mod_rewrite
+RewriteEngine On
+
+# 1) Garantir que o header Authorization chegue ao PHP
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# 2) (Opcional, mas recomendado) Redirecionar URL com .php para a versão "bonita" sem extensão
+#    Ex.: /votar.php  ->  /votar  (HTTP 301)
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.php[\s?] [NC]
+RewriteRule ^ %1 [R=301,L]
+
+# 3) Se o arquivo físico ou diretório existir, não reescrever
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 4) Reescrever URL sem extensão para o .php correspondente
+#    Ex.: /teste  ->  /teste.php
+RewriteCond %{REQUEST_FILENAME}\.php -f
+RewriteRule ^(.+?)/?$ $1.php [L]

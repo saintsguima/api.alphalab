@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteBase /gptmaker-whats-api/public/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
