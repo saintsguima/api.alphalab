@@ -5,8 +5,14 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header('Content-Type: application/json');
 require '../DbConnection/conexao.php';
 
-$sql = "SELECT 
-	cr.Id, 
+$data = json_decode(file_get_contents('php://input'), true);
+
+$Id        = $data["Id"] ?? '';
+$dtInicial = $data["dtInicial"] ?? '';
+$dtFinal   = $data["dtFinal"] ?? '';
+
+$sql = "SELECT
+    cr.Id,
     cr.IdCliente,
     cl.Nome,
     cr.DtInicio,
@@ -15,25 +21,49 @@ $sql = "SELECT
     cr.VlConciliado,
     cr.DtCC,
     cr.IdUsuarioInclusao,
-    cr.Ativo 
-FROM 
-	ContasReceber cr
-inner join cliente cl on cl.id = cr.IdCliente";
+    cr.Ativo
+FROM
+    ContasReceber cr
+INNER JOIN cliente cl ON cl.id = cr.IdCliente
+WHERE
+    cr.DtFinal >= :dataInicial
+    AND cr.DtFinal <= :dataFinal ";
 
+if ($Id > 0) {
+    $sql .= "AND cr.IdCliente = :IdCliente ";
+}
+
+$sql .= "
+ORDER BY
+    cr.DtFinal DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute();
+
+if ($Id > 0) {
+    $params = [
+        ':IdCliente'   => $Id,
+        ':dataInicial' => $dtInicial,
+        ':dataFinal'   => $dtFinal,
+    ];
+} else {
+    $params = [
+        ':dataInicial' => $dtInicial,
+        ':dataFinal'   => $dtFinal,
+    ];
+}
+
+$stmt->execute($params);
 
 if ($stmt->rowCount() > 0) {
     $crs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode([
-        'status' => 'ok',
+        'status'     => 'ok',
         'quantidade' => count($crs),
-        'crs' => $crs
+        'crs'        => $crs,
     ]);
 } else {
     echo json_encode([
-        'status' => 'erro',
-        'mensagem' => 'Nenhuma Conta a Receber encontradoa.'
+        'status'   => 'erro',
+        'mensagem' => 'Nenhuma Conta a Receber encontradoa.',
     ]);
 }
