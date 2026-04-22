@@ -21,10 +21,25 @@ $sql = "SELECT
     cr.VlConciliado,
     cr.DtCC,
     cr.IdUsuarioInclusao,
-    cr.Ativo
+    cr.Ativo,
+    GROUP_CONCAT(
+        CONCAT(
+            'Data ',
+            DATE_FORMAT(cac.DtAjuste, '%d/%m/%Y'),
+            ' Vl. Anterior ',
+            FORMAT(cac.VlAnterior, 2, 'pt_BR'),
+            ' VlAtual ',
+            FORMAT(cac.VlAtual, 2, 'pt_BR'),
+            ' - ',
+            cac.Observacao
+        )
+        ORDER BY cac.DtAjuste DESC
+        SEPARATOR ' | '
+    ) AS Observacao
 FROM
     ContasReceber cr
 INNER JOIN cliente cl ON cl.id = cr.IdCliente
+LEFT JOIN CrAjusteConciliado cac on cac.ContasReceberId = cr.Id
 WHERE
     cr.DtFinal >= :dataInicial
     AND cr.DtFinal <= :dataFinal ";
@@ -34,6 +49,17 @@ if ($Id > 0) {
 }
 
 $sql .= "
+GROUP BY
+    cr.Id,
+    cr.IdCliente,
+    cl.Nome,
+    cr.DtInicio,
+    cr.DtFinal,
+    cr.VlTotal,
+    cr.VlConciliado,
+    cr.DtCC,
+    cr.IdUsuarioInclusao,
+    cr.Ativo
 ORDER BY
     cr.DtFinal DESC";
 
